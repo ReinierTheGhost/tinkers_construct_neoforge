@@ -2,7 +2,7 @@
 modLoader="javafml" #mandatory
 loaderVersion="${loader_version_range}" #mandatory
 
-logoFile= "../../../../../src/main/resources/logo.png"
+logoFile= "logo.png"
 license="MIT"
 
 [[mods]] #mandatory

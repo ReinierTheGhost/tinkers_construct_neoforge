@@ -1,25 +1,215 @@
+//plugins {
+//    id 'java'
+//}
+//
+//group = 'slimeknights.tconstruct'
+//version = '3.11.2'
+//
+//repositories {
+//    mavenCentral()
+//}
+//
+//dependencies {
+//
+//}
+//
+//test {
+//    useJUnitPlatform()
+//}
+//
+//jar {
+//    zip64 = true
+//}
+//tasks.withType(Jar).configureEach {
+//    zip64 = true
+//}
+
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev'
 }
 
-group = 'slimeknights.tconstruct'
-version = '3.11.2'
 
-repositories {
-    mavenCentral()
+// ==========================================================================
+// MOD INFORMATION
+// ==========================================================================
+
+def modId = 'tconstruct'
+def modName = "Tinkers' Construct"
+def modVersion = '3.11.2'
+def modGroup = 'slimeknights.tconstruct'
+def modLicense = 'All Rights Reserved'
+
+
+version = modVersion
+group = modGroup
+
+
+// ==========================================================================
+// JAVA
+// ==========================================================================
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
-dependencies {
 
+// ==========================================================================
+// JAR
+// ==========================================================================
+
+base {
+    archivesName = modId
 }
 
-test {
-    useJUnitPlatform()
-}
-
-jar {
-    zip64 = true
-}
 tasks.withType(Jar).configureEach {
     zip64 = true
+}
+
+
+// ==========================================================================
+// RESOURCES
+// ==========================================================================
+
+sourceSets.main.resources {
+    srcDir('src/generated/resources')
+
+    exclude("**/*.bbmodel")
+    exclude("src/generated/**/.cache")
+}
+
+
+// ==========================================================================
+// REPOSITORIES
+// ==========================================================================
+
+repositories {
+    maven {
+        name = 'BlameJared Maven'
+        url = 'https://maven.blamejared.com'
+    }
+}
+
+
+// ==========================================================================
+// RUN CONFIGURATIONS
+// ==========================================================================
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+
+        workingDirectory project.layout.projectDirectory
+                .dir('run')
+                .dir(name)
+
+        /*
+         * Both TConstruct and Mantle need to be treated as mods
+         * in the development environment.
+         */
+        modSources {
+            add project.sourceSets.main
+            add project(':mantle').sourceSets.main
+        }
+    }
+
+    client {
+        systemProperty 'neoforge.enabledGameTestNamespaces', modId
+    }
+
+    server {
+        systemProperty 'neoforge.enabledGameTestNamespaces', modId
+        argument '--nogui'
+    }
+
+    gameTestServer {
+        systemProperty 'neoforge.enabledGameTestNamespaces', modId
+    }
+
+    data {
+        arguments.addAll(
+                '--mod', modId,
+                '--all',
+                '--output',
+                file('src/generated/resources/').absolutePath,
+                '--existing',
+                file('src/main/resources/').absolutePath
+        )
+    }
+}
+
+
+// ==========================================================================
+// CONFIGURATIONS
+// ==========================================================================
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+
+// ==========================================================================
+// DEPENDENCIES
+// ==========================================================================
+
+dependencies {
+    implementation "net.neoforged:neoforge:${neo_version}"
+
+    /*
+     * Tinkers Construct depends on Mantle.
+     */
+    implementation project(':mantle')
+
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+
+    localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+}
+
+
+// ==========================================================================
+// RESOURCE EXPANSION
+// ==========================================================================
+
+tasks.withType(ProcessResources).configureEach {
+    def replaceProperties = [
+            minecraft_version       : minecraft_version,
+            minecraft_version_range : minecraft_version_range,
+            neo_version             : neo_version,
+            loader_version_range    : loader_version_range,
+
+            mod_id                  : modId,
+            mod_name                : modName,
+            mod_license             : modLicense,
+            mod_version             : modVersion
+    ]
+
+    inputs.properties replaceProperties
+
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
+    }
+}
+
+
+// ==========================================================================
+// PUBLISHING
+// ==========================================================================
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
 }

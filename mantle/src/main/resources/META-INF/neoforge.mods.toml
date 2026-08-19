@@ -1,0 +1,32 @@
+
+modLoader="javafml" #mandatory
+loaderVersion="${loader_version_range}" #mandatory
+
+logoFile= "Mantle.png"
+license="MIT"
+
+[[mods]] #mandatory
+modId="${mod_id}" #mandatory
+version="${mod_version}" #mandatory
+displayName="${mod_name}" #mandatory
+authors="Slime Knights(Original) ReinierTheGhost(unofficial Port"
+description='''
+A little of this, a little of that, a lot of tinkering, and a lot of tools. unOfficial port to NeoForge 1.21.1
+    '''
+
+
+[[dependencies.${mod_id}]] #optional
+    modId="neoforge" #mandatory
+   type="required" #mandatory
+    versionRange="[${neo_version},)" #mandatory
+    ordering="NONE"
+    side="BOTH"
+
+# Here's another dependency
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
